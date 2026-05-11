@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Selector de Fecha Horrible</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Comic Sans MS, cursive;
+    }
+
+    body {
+      background: linear-gradient(135deg, #f7d9e3, #d9e8f7);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .container {
+      background: #fffaf5;
+      border: 4px solid #d7c5eb;
+      padding: 40px;
+      border-radius: 32px;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      width: 900px;
+    }
+
+    h1 {
+      color: #6e5b7b;
+      font-size: 42px;
+      margin-bottom: 30px;
+      font-weight: 700;
+    }
+
+    .selectors {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+
+    .wheel-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .label {
+      background: #e7dff5;
+      color: #5f5a68;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 22px;
+      border: 2px solid #d2c4ea;
+    }
+
+    .wheel {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffffff, #ece6f5);
+      border: 10px solid #c9dff2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: grab;
+      user-select: none;
+      position: relative;
+      transition: transform 0.1s linear;
+      box-shadow: inset 0 0 12px rgba(0,0,0,0.08);
+    }
+
+    .wheel::before {
+      content: "↺";
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      color: #9c88b8;
+      font-size: 35px;
+      font-weight: bold;
+    }
+
+    .value {
+      font-size: 40px;
+      font-weight: bold;
+      color: #6b5b73;
+      pointer-events: none;
+    }
+
+    .display {
+      background: #ffffff;
+      color: #7d6c91;
+      font-size: 50px;
+      padding: 30px;
+      border-radius: 25px;
+      letter-spacing: 8px;
+      border: 4px solid #ddd2ef;
+      animation: blink 1.5s infinite alternate;
+      margin-top: 20px;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+    }
+
+    @keyframes blink {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0.5;
+      }
+    }
+
+    .instructions {
+      margin-top: 25px;
+      color: #72657e;
+      font-size: 22px;
+      background: #f9f6ff;
+      padding: 18px;
+      border-radius: 20px;
+      border: 2px dashed #d9cdea;
+    }
+
+    .warning {
+      margin-top: 20px;
+      font-size: 20px;
+      color: #7ea57e;
+      font-weight: bold;
+    }
+
+    .tiny-text {
+      margin-top: 12px;
+      font-size: 10px;
+      color: #a58fb7;
+    }
+
+    .continue-btn {
+      margin-top: 30px;
+      padding: 18px 40px;
+      font-size: 28px;
+      border: none;
+      border-radius: 20px;
+      background: #d8c7f0;
+      color: #5f5670;
+      cursor: pointer;
+      transition: transform 0.2s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .continue-btn:hover {
+      transform: scale(1.03);
+    }
+
+    .result-message {
+      margin-top: 25px;
+      padding: 20px;
+      border-radius: 20px;
+      background: #f8f4ff;
+      border: 2px solid #ddd2ef;
+      color: #6b5b73;
+      font-size: 22px;
+      min-height: 90px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .toast {
+      position: fixed;
+      top: 30px;
+      right: 30px;
+      background: #79c98c;
+      color: white;
+      padding: 18px 28px;
+      border-radius: 16px;
+      font-size: 20px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: all 0.4s ease;
+      z-index: 999;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0px);
+    }
+
+    .success-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+      height: 500px;
+    }
+
+    .success-title {
+      font-size: 48px;
+      color: #6d5b7b;
+    }
+
+    .success-text {
+      font-size: 26px;
+      color: #7a6c88;
+      max-width: 600px;
+      line-height: 1.5;
+    }
+
+    .restart-btn {
+      position: relative;
+      padding: 18px 36px;
+      font-size: 28px;
+      border: none;
+      border-radius: 18px;
+      background: #d8c7f0;
+      color: #5f5670;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>INGRESE FECHA</h1>
+
+    <div class="selectors">
+
+      <div class="wheel-container">
+        <div class="label">DÍA</div>
+        <div class="wheel" id="dayWheel">
+          <div class="value" id="dayValue">01</div>
+        </div>
+      </div>
+
+      <div class="wheel-container">
+        <div class="label">MES</div>
+        <div class="wheel" id="monthWheel">
+          <div class="value" id="monthValue">01</div>
+        </div>
+      </div>
+
+      <div class="wheel-container">
+        <div class="label">AÑO</div>
+        <div class="wheel" id="yearWheel">
+          <div class="value" id="yearValue">2000</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="display" id="displayDate">
+      01 / 01 / 2000
+    </div>
+
+    <div class="instructions">
+      HAGA CLICK SOBRE EL BORDE CELESTE DE LA RUEDA Y ARRASTRE EL MOUSE.
+    </div>
+
+    <div class="warning">
+      ✔ Fecha cargada correctamente
+    </div>
+
+    <button class="continue-btn" id="continueBtn">
+      Continuar
+    </button>
+
+    <div class="result-message" id="resultMessage">
+      Complete una fecha para continuar.
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="success-screen" id="successScreen">
+      <div class="success-title">
+        ✔ Desafío completado
+      </div>
+
+      <div class="success-text">
+        Logró descubrir la única fecha válida del sistema.
+        Ahora intente reiniciar la experiencia.
+      </div>
+
+      <button class="restart-btn" id="restartBtn">
+        Reiniciar
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+
+window.addEventListener('DOMContentLoaded', function () {
+
+  var dayWheel = document.getElementById('dayWheel');
+  var monthWheel = document.getElementById('monthWheel');
+  var yearWheel = document.getElementById('yearWheel');
+
+  var dayValue = document.getElementById('dayValue');
+  var monthValue = document.getElementById('monthValue');
+  var yearValue = document.getElementById('yearValue');
+
+  var displayDate = document.getElementById('displayDate');
+
+  var day = 1;
+  var month = 1;
+  var year = 2000;
+
+  function updateDisplay() {
+    var dd = String(day).padStart(2, '0');
+    var mm = String(month).padStart(2, '0');
+
+    dayValue.textContent = dd;
+    monthValue.textContent = mm;
+    yearValue.textContent = year;
+
+    displayDate.textContent = dd + ' / ' + mm + ' / ' + year;
+  }
+
+  function setupWheel(wheel, type) {
+
+    var rotation = 0;
+    var isDragging = false;
+    var startX = 0;
+
+    wheel.addEventListener('mousedown', function(e) {
+      isDragging = true;
+      startX = e.clientX;
+      wheel.style.cursor = 'grabbing';
+    });
+
+    document.addEventListener('mouseup', function() {
+      isDragging = false;
+      wheel.style.cursor = 'grab';
+    });
+
+    document.addEventListener('mousemove', function(e) {
+
+      if (!isDragging) return;
+
+      var difference = e.clientX - startX;
+
+      if (Math.abs(difference) < 15) return;
+
+      if (difference > 0) {
+
+        rotation -= 25;
+
+        if (type === 'day') {
+          day--;
+          if (day < 1) day = 31;
+        }
+
+        if (type === 'month') {
+          month--;
+          if (month < 1) month = 12;
+        }
+
+        if (type === 'year') {
+          year--;
+          if (year < 1900) year = 2025;
+        }
+
+      } else {
+
+        rotation += 25;
+
+        if (type === 'day') {
+          day++;
+          if (day > 31) day = 1;
+        }
+
+        if (type === 'month') {
+          month++;
+          if (month > 12) month = 1;
+        }
+
+        if (type === 'year') {
+          year++;
+          if (year > 2025) year = 1900;
+        }
+      }
+
+      wheel.style.transform = 'rotate(' + (-rotation) + 'deg)';
+
+      updateDisplay();
+
+      startX = e.clientX;
+    });
+  }
+
+  setupWheel(dayWheel, 'day');
+  setupWheel(monthWheel, 'month');
+  setupWheel(yearWheel, 'year');
+
+  updateDisplay();
+
+  var continueBtn = document.getElementById('continueBtn');
+  var resultMessage = document.getElementById('resultMessage');
+  var toast = document.getElementById('toast');
+  var successScreen = document.getElementById('successScreen');
+  var restartBtn = document.getElementById('restartBtn');
+
+  var escapeCounter = 0;
+
+  function showToast(message) {
+    toast.innerHTML = message;
+    toast.classList.add('show');
+
+    setTimeout(function() {
+      toast.classList.remove('show');
+    }, 3500);
+  }
+
+  continueBtn.addEventListener('click', function() {
+
+    var selectedDate = new Date(year, month - 1, day);
+    var validDate = new Date(year, 3, 1);
+
+    var isValid = (
+      day === 1 &&
+      month === 4 &&
+      year > 1990
+    );
+
+    if (isValid) {
+
+      document.querySelector('.selectors').style.display = 'none';
+      document.querySelector('.display').style.display = 'none';
+      document.querySelector('.instructions').style.display = 'none';
+      document.querySelector('.warning').style.display = 'none';
+      continueBtn.style.display = 'none';
+      resultMessage.style.display = 'none';
+
+      successScreen.style.display = 'flex';
+
+    } else {
+
+      var differenceMs = Math.abs(validDate - selectedDate);
+      var differenceDays = Math.floor(differenceMs / (1000 * 60 * 60 * 24));
+
+      showToast('✔ Está a ' + differenceDays + ' días de la fecha correcta.');
+    }
+  });
+
+  restartBtn.addEventListener('mouseover', function() {
+
+    if (escapeCounter < 8) {
+
+      var randomX = Math.random() * 500 - 250;
+      var randomY = Math.random() * 250 - 125;
+
+      restartBtn.style.transform = 'translate(' + randomX + 'px, ' + randomY + 'px)';
+
+      escapeCounter++;
+    }
+  });
+
+  restartBtn.addEventListener('click', function() {
+
+    day = 1;
+    month = 1;
+    year = 2000;
+
+    updateDisplay();
+
+    document.querySelector('.selectors').style.display = 'flex';
+    document.querySelector('.display').style.display = 'block';
+    document.querySelector('.instructions').style.display = 'block';
+    document.querySelector('.warning').style.display = 'block';
+    continueBtn.style.display = 'inline-block';
+    resultMessage.style.display = 'flex';
+
+    successScreen.style.display = 'none';
+
+    restartBtn.style.transform = 'translate(0px, 0px)';
+
+    escapeCounter = 0;
+
+  });
+
+});
+
+</script>
+
+</body>
+</html>
