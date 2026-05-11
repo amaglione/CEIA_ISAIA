@@ -1,6 +1,8 @@
 # Trabajo Práctico Bad UI - IISAIA
 **Materia:** Introducción al Desarrollo de Software Asistido por IA
+
 **Carrera:** Especialización en Inteligencia Artificial (CEIA - FIUBA)
+
 **Autor:** Agustin Maglione
 
 ## Descripción del Proyecto
