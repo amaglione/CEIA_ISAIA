@@ -1,0 +1,625 @@
+openapi: "3.0.3"
+
+info:
+  title: API de Registro de Productos
+  description: >
+    API REST para gestionar un catálogo de productos.
+    Incluye autenticación mediante JWT (Bearer Token),
+    operaciones CRUD completas sobre productos y
+    gestión de categorías.
+  version: "1.0.0"
+  contact:
+    name: Soporte API
+    email: soporte@productos-api.example.com
+
+servers:
+  - url: https://api.productos.example.com/v1
+    description: Producción
+  - url: https://staging-api.productos.example.com/v1
+    description: Staging
+
+tags:
+  - name: Autenticación
+    description: Registro de usuarios e inicio de sesión
+  - name: Productos
+    description: Operaciones CRUD sobre productos
+  - name: Categorías
+    description: Gestión de categorías de productos
+
+# ─────────────────────────────────────────────
+#  Seguridad global
+# ─────────────────────────────────────────────
+security:
+  - BearerAuth: []
+
+# ─────────────────────────────────────────────
+#  Paths
+# ─────────────────────────────────────────────
+paths:
+
+  # ── Auth ──────────────────────────────────
+  /auth/register:
+    post:
+      tags: [Autenticación]
+      summary: Registrar un nuevo usuario
+      security: []   # público
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+            example:
+              nombre: "María García"
+              email: "maria@example.com"
+              password: "S3gur@Pass!"
+      responses:
+        "201":
+          description: Usuario creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: El email ya está registrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /auth/login:
+    post:
+      tags: [Autenticación]
+      summary: Iniciar sesión
+      security: []   # público
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            example:
+              email: "maria@example.com"
+              password: "S3gur@Pass!"
+      responses:
+        "200":
+          description: Inicio de sesión exitoso
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ── Productos ─────────────────────────────
+  /productos:
+    get:
+      tags: [Productos]
+      summary: Listar productos
+      description: Devuelve una lista paginada de productos. Soporta filtros opcionales.
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - name: categoria_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filtrar por categoría
+        - name: busqueda
+          in: query
+          schema:
+            type: string
+          description: Búsqueda por nombre o descripción
+        - name: precio_min
+          in: query
+          schema:
+            type: number
+            format: double
+        - name: precio_max
+          in: query
+          schema:
+            type: number
+            format: double
+        - name: ordenar_por
+          in: query
+          schema:
+            type: string
+            enum: [nombre, precio, fecha_creacion]
+            default: fecha_creacion
+        - name: orden
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        "200":
+          description: Lista de productos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductosPaginados"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      tags: [Productos]
+      summary: Crear un producto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductoInput"
+            example:
+              nombre: "Teclado Mecánico RGB"
+              descripcion: "Teclado mecánico con switches Cherry MX Blue y retroiluminación RGB."
+              precio: 89.99
+              stock: 150
+              sku: "TEC-MEC-001"
+              categoria_id: "c3a1f7e2-4b5d-4c8a-9e1f-0d2a3b4c5d6e"
+              imagenes:
+                - url: "https://cdn.example.com/teclado-front.jpg"
+                  alt: "Vista frontal del teclado"
+      responses:
+        "201":
+          description: Producto creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Producto"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /productos/{productoId}:
+    parameters:
+      - $ref: "#/components/parameters/ProductoId"
+
+    get:
+      tags: [Productos]
+      summary: Obtener un producto por ID
+      responses:
+        "200":
+          description: Detalle del producto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Producto"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      tags: [Productos]
+      summary: Actualizar un producto completo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductoInput"
+      responses:
+        "200":
+          description: Producto actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Producto"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    patch:
+      tags: [Productos]
+      summary: Actualizar campos específicos de un producto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductoPatch"
+      responses:
+        "200":
+          description: Producto actualizado parcialmente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Producto"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags: [Productos]
+      summary: Eliminar un producto
+      responses:
+        "204":
+          description: Producto eliminado
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ── Categorías ────────────────────────────
+  /categorias:
+    get:
+      tags: [Categorías]
+      summary: Listar categorías
+      responses:
+        "200":
+          description: Lista de categorías
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Categoria"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      tags: [Categorías]
+      summary: Crear una categoría
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoriaInput"
+            example:
+              nombre: "Periféricos"
+              descripcion: "Dispositivos de entrada y salida para computadoras"
+      responses:
+        "201":
+          description: Categoría creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Categoria"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /categorias/{categoriaId}:
+    parameters:
+      - name: categoriaId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    put:
+      tags: [Categorías]
+      summary: Actualizar una categoría
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoriaInput"
+      responses:
+        "200":
+          description: Categoría actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Categoria"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      tags: [Categorías]
+      summary: Eliminar una categoría
+      responses:
+        "204":
+          description: Categoría eliminada
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+# ─────────────────────────────────────────────
+#  Componentes
+# ─────────────────────────────────────────────
+components:
+
+  # ── Esquemas de seguridad ─────────────────
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        Token JWT obtenido en /auth/login o /auth/register.
+        Incluir en el header como: Authorization: Bearer <token>
+
+  # ── Parámetros reutilizables ──────────────
+  parameters:
+    ProductoId:
+      name: productoId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: ID único del producto
+
+    PageParam:
+      name: pagina
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      description: Número de página
+
+    LimitParam:
+      name: limite
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Cantidad de resultados por página
+
+  # ── Respuestas reutilizables ──────────────
+  responses:
+    BadRequest:
+      description: Solicitud inválida — datos faltantes o con formato incorrecto
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    Unauthorized:
+      description: No autenticado — token ausente o inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  # ── Esquemas (modelos) ────────────────────
+  schemas:
+
+    # — Auth —
+    RegisterRequest:
+      type: object
+      required: [nombre, email, password]
+      properties:
+        nombre:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: "María García"
+        email:
+          type: string
+          format: email
+          example: "maria@example.com"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          description: "Mínimo 8 caracteres, al menos una mayúscula, una minúscula y un número."
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT para incluir en las siguientes solicitudes
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        expira_en:
+          type: integer
+          description: Segundos hasta la expiración del token
+          example: 3600
+        usuario:
+          $ref: "#/components/schemas/Usuario"
+
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+        email:
+          type: string
+          format: email
+        rol:
+          type: string
+          enum: [admin, editor, lector]
+        fecha_creacion:
+          type: string
+          format: date-time
+
+    # — Productos —
+    ProductoInput:
+      type: object
+      required: [nombre, precio, stock, sku, categoria_id]
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 200
+        descripcion:
+          type: string
+          maxLength: 2000
+        precio:
+          type: number
+          format: double
+          minimum: 0
+        stock:
+          type: integer
+          minimum: 0
+        sku:
+          type: string
+          description: Código único de inventario
+          pattern: "^[A-Z0-9\\-]{3,30}$"
+        categoria_id:
+          type: string
+          format: uuid
+        imagenes:
+          type: array
+          maxItems: 10
+          items:
+            $ref: "#/components/schemas/Imagen"
+
+    ProductoPatch:
+      type: object
+      description: Cualquier subconjunto de los campos de ProductoInput
+      properties:
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        precio:
+          type: number
+          format: double
+          minimum: 0
+        stock:
+          type: integer
+          minimum: 0
+        categoria_id:
+          type: string
+          format: uuid
+        imagenes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Imagen"
+
+    Producto:
+      allOf:
+        - $ref: "#/components/schemas/ProductoInput"
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            creado_por:
+              type: string
+              format: uuid
+              description: ID del usuario que creó el producto
+            fecha_creacion:
+              type: string
+              format: date-time
+            fecha_actualizacion:
+              type: string
+              format: date-time
+
+    ProductosPaginados:
+      type: object
+      properties:
+        datos:
+          type: array
+          items:
+            $ref: "#/components/schemas/Producto"
+        paginacion:
+          $ref: "#/components/schemas/Paginacion"
+
+    Paginacion:
+      type: object
+      properties:
+        pagina_actual:
+          type: integer
+        total_paginas:
+          type: integer
+        total_resultados:
+          type: integer
+        limite:
+          type: integer
+
+    Imagen:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          format: uri
+        alt:
+          type: string
+          maxLength: 200
+
+    # — Categorías —
+    CategoriaInput:
+      type: object
+      required: [nombre]
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          maxLength: 100
+        descripcion:
+          type: string
+          maxLength: 500
+
+    Categoria:
+      allOf:
+        - $ref: "#/components/schemas/CategoriaInput"
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            fecha_creacion:
+              type: string
+              format: date-time
+
+    # — Error genérico —
+    Error:
+      type: object
+      properties:
+        codigo:
+          type: integer
+          description: Código HTTP del error
+          example: 400
+        mensaje:
+          type: string
+          description: Descripción legible del error
+          example: "El campo 'nombre' es obligatorio."
+        detalles:
+          type: array
+          items:
+            type: object
+            properties:
+              campo:
+                type: string
+              error:
+                type: string
